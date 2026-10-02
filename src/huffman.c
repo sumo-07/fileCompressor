@@ -228,3 +228,30 @@ void generateCodes(
         codes
     );
 }
+
+
+
+// temp encoding function for testing
+void encodeFile(
+    const char *filename,
+    char *codes[256]
+) {
+
+    FILE *file = fopen(filename, "rb");
+
+    if (file == NULL) {
+        printf("Could not open file\n");
+        return;
+    }
+
+    unsigned char byte;
+
+    while (fread(&byte, 1, 1, file) == 1) {
+
+        printf("%s", codes[byte]);
+    }
+
+    printf("\n");
+
+    fclose(file);
+}

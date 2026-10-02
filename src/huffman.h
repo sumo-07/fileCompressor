@@ -38,6 +38,12 @@ void generateCodes(
 );
 
 
+void encodeFile(
+    const char *filename,
+    char *codes[256]
+);
+
+
 
 
 #endif

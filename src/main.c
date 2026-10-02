@@ -3,23 +3,56 @@
 
 #include "huffman.h"
 
-int main() {
+int main()
+{
 
-    unsigned long frequency[256] = {0};
+    FILE *file = fopen("../tests/test.txt", "rb");
 
-    frequency['A'] = 5;
-    frequency['B'] = 2;
-    frequency['C'] = 1;
-    frequency['D'] = 1;
-
-    HuffmanNode *root =
-        buildHuffmanTree(frequency);
-
-    if (root == NULL) {
-        printf("Failed to build tree\n");
+    if (file == NULL)
+    {
+        printf("Could not open file\n");
         return 1;
     }
 
+    unsigned long frequency[256] = {0};
+
+    unsigned char byte;
+
+    while (fread(&byte, 1, 1, file) == 1)
+    {
+        frequency[byte]++;
+    }
+
+    fclose(file);
+
+    printf("Frequency table:\n");
+
+    for (int i = 0; i < 256; i++)
+    {
+
+        if (frequency[i] > 0)
+        {
+
+            printf(
+                "%d -> %lu\n",
+                i,
+                frequency[i]);
+        }
+    }
+
+    printf("----------------x--------x-----------\n");
+
+    // build the Huffman tree
+    HuffmanNode *root =
+        buildHuffmanTree(frequency);
+
+    if (root == NULL)
+    {
+        printf("Could not build Huffman tree\n");
+        return 1;
+    }
+
+    // generate code table
     char *codes[256] = {NULL};
 
     char code[256];
@@ -28,29 +61,30 @@ int main() {
         root,
         code,
         0,
-        codes
-    );
+        codes);
 
-    printf("\nGenerated codes:\n");
+    printf("\nHuffman Codes:\n");
 
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
 
-        if (codes[i] != NULL) {
+        if (codes[i] != NULL)
+        {
 
             printf(
-                "%c -> %s\n",
+                "%d ('%c') -> %s\n",
+                i,
                 (unsigned char)i,
-                codes[i]
-            );
+                codes[i]);
         }
     }
 
-    // Free codes
-    for (int i = 0; i < 256; i++) {
-        free(codes[i]);
-    }
+    // encoding testing
+    printf("\nEncoded bits:\n");
 
-    freeTree(root);
+    encodeFile(
+        "../tests/test.txt",
+        codes);
 
     return 0;
 }
