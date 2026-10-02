@@ -1,7 +1,8 @@
 #ifndef HUFFMAN_H
 #define HUFFMAN_H
 
-typedef struct HuffmanNode {
+typedef struct HuffmanNode
+{
 
     unsigned char data;
     unsigned long frequency;
@@ -11,14 +12,21 @@ typedef struct HuffmanNode {
 
 } HuffmanNode;
 
-HuffmanNode* createNode(
+HuffmanNode *createNode(
     unsigned char data,
-    unsigned long frequency
-);
+    unsigned long frequency);
 
 int createFrequencyNodes(
     unsigned long frequency[256],
-    HuffmanNode *nodes[256]
-);
+    HuffmanNode *nodes[256]);
 
+HuffmanNode *buildHuffmanTree(
+    unsigned long frequency[256]);
+
+void printTree(
+    HuffmanNode *root,
+    int depth);
+
+
+void freeTree(HuffmanNode *root);
 #endif

@@ -2,12 +2,15 @@
 #include <stdlib.h>
 
 #include "huffman.h"
+#include "heap.h"
 
-HuffmanNode* createNode(unsigned char data, unsigned long frequency) {
+HuffmanNode *createNode(unsigned char data, unsigned long frequency)
+{
 
     HuffmanNode *node = malloc(sizeof(HuffmanNode));
 
-    if (node == NULL) {
+    if (node == NULL)
+    {
         printf("Memory allocation failed\n");
         return NULL;
     }
@@ -21,24 +24,25 @@ HuffmanNode* createNode(unsigned char data, unsigned long frequency) {
     return node;
 }
 
-
 int createFrequencyNodes(
     unsigned long frequency[256],
-    HuffmanNode *nodes[256]
-) {
+    HuffmanNode *nodes[256])
+{
 
     int count = 0;
 
-    for (int i = 0; i < 256; i++) {
+    for (int i = 0; i < 256; i++)
+    {
 
-        if (frequency[i] > 0) {
+        if (frequency[i] > 0)
+        {
 
             nodes[count] = createNode(
                 (unsigned char)i,
-                frequency[i]
-            );
+                frequency[i]);
 
-            if (nodes[count] == NULL) {
+            if (nodes[count] == NULL)
+            {
                 return -1;
             }
 
@@ -47,4 +51,120 @@ int createFrequencyNodes(
     }
 
     return count;
+}
+
+// Build the Huffman tree from the frequency array
+HuffmanNode *buildHuffmanTree(
+    unsigned long frequency[256])
+{
+
+    MinHeap heap;
+
+    initHeap(&heap);
+
+    // Create nodes for every byte that exists
+    HuffmanNode *nodes[256];
+
+    int nodeCount =
+        createFrequencyNodes(
+            frequency,
+            nodes);
+
+    if (nodeCount <= 0)
+    {
+        return NULL;
+    }
+
+    // Put all nodes into the heap
+    for (int i = 0; i < nodeCount; i++)
+    {
+
+        insertHeap(
+            &heap,
+            nodes[i]);
+    }
+
+    // Keep combining two smallest nodes
+    while (heap.size > 1)
+    {
+
+        HuffmanNode *left =
+            extractMin(&heap);
+
+        HuffmanNode *right =
+            extractMin(&heap);
+
+        // Create internal node
+        HuffmanNode *parent =
+            createNode(
+                0,
+                left->frequency + right->frequency);
+
+        if (parent == NULL)
+        {
+            return NULL;
+        }
+
+        parent->left = left;
+        parent->right = right;
+
+        insertHeap(
+            &heap,
+            parent);
+    }
+
+    // The last node is the root
+    return extractMin(&heap);
+}
+
+// Print the Huffman tree (for debugging)
+void printTree(
+    HuffmanNode *root,
+    int depth)
+{
+
+    if (root == NULL)
+    {
+        return;
+    }
+
+    for (int i = 0; i < depth; i++)
+    {
+        printf("  ");
+    }
+
+    // Leaf node
+    if (root->left == NULL &&
+        root->right == NULL)
+    {
+
+        printf(
+            "'%c' : %lu\n",
+            root->data,
+            root->frequency);
+    }
+    else
+    {
+
+        printf(
+            "* : %lu\n",
+            root->frequency);
+    }
+
+    printTree(root->left, depth + 1);
+
+    printTree(root->right, depth + 1);
+}
+
+// Free the Huffman tree
+void freeTree(HuffmanNode *root) {
+
+    if (root == NULL) {
+        return;
+    }
+
+    freeTree(root->left);
+    freeTree(root->right);
+
+    free(root);
 }
