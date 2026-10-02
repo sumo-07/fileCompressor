@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "huffman.h"
 
@@ -15,16 +16,40 @@ int main() {
         buildHuffmanTree(frequency);
 
     if (root == NULL) {
-        printf("Failed to build Huffman tree\n");
+        printf("Failed to build tree\n");
         return 1;
     }
 
-    printf(
-        "Root frequency: %lu\n",
-        root->frequency
+    char *codes[256] = {NULL};
+
+    char code[256];
+
+    generateCodes(
+        root,
+        code,
+        0,
+        codes
     );
 
-    printTree(root, 0);
+    printf("\nGenerated codes:\n");
+
+    for (int i = 0; i < 256; i++) {
+
+        if (codes[i] != NULL) {
+
+            printf(
+                "%c -> %s\n",
+                (unsigned char)i,
+                codes[i]
+            );
+        }
+    }
+
+    // Free codes
+    for (int i = 0; i < 256; i++) {
+        free(codes[i]);
+    }
+
     freeTree(root);
 
     return 0;

@@ -29,4 +29,15 @@ void printTree(
 
 
 void freeTree(HuffmanNode *root);
+
+void generateCodes(
+    HuffmanNode *root,
+    char *code,
+    int depth,
+    char *codes[256]
+);
+
+
+
+
 #endif

@@ -168,3 +168,63 @@ void freeTree(HuffmanNode *root) {
 
     free(root);
 }
+
+// Generate Huffman codes for each byte
+void generateCodes(
+    HuffmanNode *root,
+    char *code,
+    int depth,
+    char *codes[256]
+) {
+
+    if (root == NULL) {
+        return;
+    }
+
+    // We reached a leaf
+    if (root->left == NULL &&
+        root->right == NULL) {
+
+        code[depth] = '\0';
+
+        codes[root->data] = malloc(
+            (depth + 1) * sizeof(char)
+        );
+
+        if (codes[root->data] == NULL) { // if memory allocation fails
+            return;
+        }
+
+        for (int i = 0; i <= depth; i++) {
+            codes[root->data][i] = code[i];
+        }
+
+        printf(
+            "'%c' -> %s\n",
+            root->data,
+            codes[root->data]
+        );
+
+        return;
+    }
+
+    // Go left → add 0
+    code[depth] = '0';
+
+    generateCodes(
+        root->left,
+        code,
+        depth + 1,
+        codes
+    );
+
+    // Go right → add 1
+    code[depth] = '1';
+
+    generateCodes(
+        root->right,
+        code,
+        depth + 1,
+        codes
+    );
+}
