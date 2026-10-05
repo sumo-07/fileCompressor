@@ -3,6 +3,7 @@
 
 #include "huffman.h"
 #include "heap.h"
+#include "bit_io.h"
 
 HuffmanNode *createNode(unsigned char data, unsigned long frequency)
 {
@@ -157,9 +158,11 @@ void printTree(
 }
 
 // Free the Huffman tree
-void freeTree(HuffmanNode *root) {
+void freeTree(HuffmanNode *root)
+{
 
-    if (root == NULL) {
+    if (root == NULL)
+    {
         return;
     }
 
@@ -174,36 +177,38 @@ void generateCodes(
     HuffmanNode *root,
     char *code,
     int depth,
-    char *codes[256]
-) {
+    char *codes[256])
+{
 
-    if (root == NULL) {
+    if (root == NULL)
+    {
         return;
     }
 
     // We reached a leaf
     if (root->left == NULL &&
-        root->right == NULL) {
+        root->right == NULL)
+    {
 
         code[depth] = '\0';
 
         codes[root->data] = malloc(
-            (depth + 1) * sizeof(char)
-        );
+            (depth + 1) * sizeof(char));
 
-        if (codes[root->data] == NULL) { // if memory allocation fails
+        if (codes[root->data] == NULL)
+        { // if memory allocation fails
             return;
         }
 
-        for (int i = 0; i <= depth; i++) {
+        for (int i = 0; i <= depth; i++)
+        {
             codes[root->data][i] = code[i];
         }
 
         printf(
             "'%c' -> %s\n",
             root->data,
-            codes[root->data]
-        );
+            codes[root->data]);
 
         return;
     }
@@ -215,8 +220,7 @@ void generateCodes(
         root->left,
         code,
         depth + 1,
-        codes
-    );
+        codes);
 
     // Go right → add 1
     code[depth] = '1';
@@ -225,33 +229,54 @@ void generateCodes(
         root->right,
         code,
         depth + 1,
-        codes
-    );
+        codes);
 }
 
+// Compress the input file using the generated Huffman codes
+int compressFile(
+    const char *inputFilename,
+    const char *outputFilename,
+    char *codes[256])
+{
 
+    FILE *input = fopen(inputFilename, "rb");
 
-// temp encoding function for testing
-void encodeFile(
-    const char *filename,
-    char *codes[256]
-) {
-
-    FILE *file = fopen(filename, "rb");
-
-    if (file == NULL) {
-        printf("Could not open file\n");
-        return;
+    if (input == NULL)
+    {
+        printf("Could not open input file\n");
+        return 0;
     }
+
+    FILE *output = fopen(outputFilename, "wb");
+
+    if (output == NULL)
+    {
+        printf("Could not open output file\n");
+        fclose(input);
+        return 0;
+    }
+
+    BitWriter writer;
+
+    initBitWriter(
+        &writer,
+        output);
 
     unsigned char byte;
 
-    while (fread(&byte, 1, 1, file) == 1) {
+    while (fread(&byte, 1, 1, input) == 1)
+    {
 
-        printf("%s", codes[byte]);
+        writeBits(
+            &writer,
+            codes[byte]);
     }
 
-    printf("\n");
+    // Write remaining bits
+    flushBitWriter(&writer);
 
-    fclose(file);
+    fclose(input);
+    fclose(output);
+
+    return 1;
 }

@@ -38,8 +38,9 @@ void generateCodes(
 );
 
 
-void encodeFile(
-    const char *filename,
+int compressFile(
+    const char *inputFilename,
+    const char *outputFilename,
     char *codes[256]
 );
 
