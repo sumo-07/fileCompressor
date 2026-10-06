@@ -1,102 +1,46 @@
 #include <stdio.h>
-#include <stdlib.h>
 
-#include "huffman.h"
+#include "file_format.h"
 
 int main() {
 
-    // -----------------------------
-    // Step 1: Read input file
-    // -----------------------------
+    unsigned long long frequency[256] = {0};
 
-    FILE *file = fopen("../tests/test.txt", "rb");
+    frequency['A'] = 5;
+    frequency['B'] = 2;
+    frequency['C'] = 1;
+
+    HuffmanHeader header;
+
+    initializeHeader(
+        &header,
+        8,
+        frequency
+    );
+
+    FILE *file =
+        fopen("test.huf", "wb");
 
     if (file == NULL) {
-        printf("Could not open input file\n");
+        printf("Could not create file\n");
         return 1;
     }
 
-    // -----------------------------
-    // Step 2: Frequency analysis
-    // -----------------------------
+    if (!writeHeader(
+            file,
+            &header
+        )) {
 
-    unsigned long frequency[256] = {0};
+        printf("Failed to write header\n");
 
-    unsigned char byte;
+        fclose(file);
 
-    while (fread(&byte, 1, 1, file) == 1) {
-        frequency[byte]++;
+        return 1;
     }
 
     fclose(file);
 
-    // -----------------------------
-    // Step 3: Build Huffman tree
-    // -----------------------------
-
-    HuffmanNode *root =
-        buildHuffmanTree(frequency);
-
-    if (root == NULL) {
-        printf("Could not build Huffman tree\n");
-        return 1;
-    }
-
-    // -----------------------------
-    // Step 4: Generate codes
-    // -----------------------------
-
-    char *codes[256] = {NULL};
-
-    char code[256];
-
-    generateCodes(
-        root,
-        code,
-        0,
-        codes
-    );
-
-    printf("\nHuffman Codes:\n");
-
-    for (int i = 0; i < 256; i++) {
-
-        if (codes[i] != NULL) {
-
-            printf(
-                "%d ('%c') -> %s\n",
-                i,
-                (unsigned char)i,
-                codes[i]
-            );
-        }
-    }
-
-    // -----------------------------
-    // Step 5: Compress
-    // -----------------------------
-
-    if (compressFile(
-            "../tests/test.txt",
-            "output.bin",
-            codes)) {
-
-        printf("\nCompression successful!\n");
-
-    } else {
-
-        printf("\nCompression failed!\n");
-    }
-
-    // -----------------------------
-    // Cleanup
-    // -----------------------------
-
-    for (int i = 0; i < 256; i++) {
-        free(codes[i]);
-    }
-
-    freeTree(root);
+    printf("Header written successfully\n");
 
     return 0;
 }
