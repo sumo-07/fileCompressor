@@ -4,8 +4,9 @@
 #include "huffman.h"
 #include "heap.h"
 #include "bit_io.h"
+#include "file_format.h"
 
-HuffmanNode *createNode(unsigned char data, unsigned long frequency)
+HuffmanNode *createNode(unsigned char data, unsigned long long frequency)
 {
 
     HuffmanNode *node = malloc(sizeof(HuffmanNode));
@@ -26,7 +27,7 @@ HuffmanNode *createNode(unsigned char data, unsigned long frequency)
 }
 
 int createFrequencyNodes(
-    unsigned long frequency[256],
+    unsigned long long frequency[256],
     HuffmanNode *nodes[256])
 {
 
@@ -56,7 +57,7 @@ int createFrequencyNodes(
 
 // Build the Huffman tree from the frequency array
 HuffmanNode *buildHuffmanTree(
-    unsigned long frequency[256])
+    unsigned long long frequency[256])
 {
 
     MinHeap heap;
@@ -140,7 +141,7 @@ void printTree(
     {
 
         printf(
-            "'%c' : %lu\n",
+            "'%c' : %llu\n",
             root->data,
             root->frequency);
     }
@@ -148,7 +149,7 @@ void printTree(
     {
 
         printf(
-            "* : %lu\n",
+            "* : %llu\n",
             root->frequency);
     }
 
@@ -190,7 +191,18 @@ void generateCodes(
         root->right == NULL)
     {
 
-        code[depth] = '\0';
+        // Special case:
+        // file contains only one unique byte
+        if (depth == 0)
+        {
+            code[0] = '0';
+            code[1] = '\0';
+            depth = 1;
+        }
+        else
+        {
+            code[depth] = '\0';
+        }
 
         codes[root->data] = malloc(
             (depth + 1) * sizeof(char));
@@ -236,6 +248,7 @@ void generateCodes(
 int compressFile(
     const char *inputFilename,
     const char *outputFilename,
+    unsigned long long frequency[256],
     char *codes[256])
 {
 
@@ -251,16 +264,63 @@ int compressFile(
 
     if (output == NULL)
     {
-        printf("Could not open output file\n");
+        printf("Could not create output file\n");
         fclose(input);
         return 0;
     }
+
+    // -----------------------------
+    // Calculate original file size
+    // -----------------------------
+
+    fseek(input, 0, SEEK_END);
+
+    unsigned long long originalSize =
+        ftell(input);
+
+    fseek(input, 0, SEEK_SET);
+
+    // -----------------------------
+    // Create header
+    // -----------------------------
+
+    HuffmanHeader header;
+
+    initializeHeader(
+        &header,
+        originalSize,
+        frequency);
+
+    // -----------------------------
+    // Write header
+    // -----------------------------
+
+    if (!writeHeader(
+            output,
+            &header))
+    {
+
+        printf("Could not write header\n");
+
+        fclose(input);
+        fclose(output);
+
+        return 0;
+    }
+
+    // -----------------------------
+    // Initialize bit writer
+    // -----------------------------
 
     BitWriter writer;
 
     initBitWriter(
         &writer,
         output);
+
+    // -----------------------------
+    // Encode input file
+    // -----------------------------
 
     unsigned char byte;
 

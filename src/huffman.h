@@ -5,7 +5,7 @@ typedef struct HuffmanNode
 {
 
     unsigned char data;
-    unsigned long frequency;
+    unsigned long long frequency;
 
     struct HuffmanNode *left;
     struct HuffmanNode *right;
@@ -14,14 +14,14 @@ typedef struct HuffmanNode
 
 HuffmanNode *createNode(
     unsigned char data,
-    unsigned long frequency);
+    unsigned long long frequency);
 
 int createFrequencyNodes(
-    unsigned long frequency[256],
+    unsigned long long frequency[256],
     HuffmanNode *nodes[256]);
 
 HuffmanNode *buildHuffmanTree(
-    unsigned long frequency[256]);
+    unsigned long long frequency[256]);
 
 void printTree(
     HuffmanNode *root,
@@ -41,6 +41,7 @@ void generateCodes(
 int compressFile(
     const char *inputFilename,
     const char *outputFilename,
+    unsigned long long frequency[256],
     char *codes[256]
 );
 
