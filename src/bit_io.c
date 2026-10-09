@@ -65,3 +65,34 @@ void flushBitWriter(
         writer->bitCount = 0;
     }
 }
+
+// BitReader functions
+void initBitReader(BitReader *reader, FILE *file) {
+    reader->file = file;
+    reader->buffer = 0;
+    reader->bitCount = 0;
+}
+
+int readBit(BitReader *reader) {
+    // Load the next byte when no bits remain
+    if (reader->bitCount == 0) {
+        int byte = fgetc(reader->file);
+
+        // End of file or read error
+        if (byte == EOF) {
+            return -1;
+        }
+
+        reader->buffer = (unsigned char)byte;
+        reader->bitCount = 8;
+    }
+
+    // Extract the leftmost unread bit
+    int bit = (reader->buffer >> 7) & 1;
+
+    // Shift remaining bits to the left
+    reader->buffer <<= 1;
+    reader->bitCount--;
+
+    return bit;
+}

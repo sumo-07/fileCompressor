@@ -32,4 +32,15 @@ void flushBitWriter(
     BitWriter *writer
 );
 
+
+typedef struct {
+    FILE *file;
+    unsigned char buffer;
+    int bitCount;
+} BitReader;
+
+void initBitReader(BitReader *reader, FILE *file);
+int readBit(BitReader *reader);
+
+
 #endif
