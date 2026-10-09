@@ -3,8 +3,51 @@
 #include <string.h>
 
 #include "huffman.h"
+#include "file_format.h"
+
+
+// Decompress a file using Huffman coding
+int decompressFile(const char *inputFilename) {
+    FILE *input = fopen(inputFilename, "rb");
+
+    if (input == NULL) {
+        perror("Could not open compressed file");
+        return 0;
+    }
+
+    HuffmanHeader header;
+
+    if (!readHeader(input, &header)) {
+        printf("Invalid or corrupted compressed file.\n");
+        fclose(input);
+        return 0;
+    }
+
+    printf("Original file size: %llu bytes\n",
+           header.originalSize);
+
+    HuffmanNode *root = buildHuffmanTree(header.frequency);
+
+    if (root == NULL && header.originalSize > 0) {
+        printf("Could not rebuild Huffman tree.\n");
+        fclose(input);
+        return 0;
+    }
+
+    printf("Huffman tree rebuilt successfully.\n");
+
+    freeTree(root);
+    fclose(input);
+
+    return 1;
+}
+
 
 int main(int argc, char *argv[]) {
+
+    if (argc >= 3 && strcmp(argv[1], "-d") == 0) {
+        return decompressFile(argv[2]) ? 0 : 1;
+    }
 
     const char *defaultInputFilename = "tests/test.txt";
     const char *fallbackInputFilename = "../tests/test.txt";
@@ -132,6 +175,9 @@ int main(int argc, char *argv[]) {
     }
 
     freeTree(root);
+
+
+
 
     return 0;
 }
