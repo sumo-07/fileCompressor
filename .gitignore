@@ -80,3 +80,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+#restored files
+restored.txt

@@ -4,10 +4,78 @@
 
 #include "huffman.h"
 #include "file_format.h"
+#include "bit_io.h"
+
+// Decode the compressed data using the Huffman tree
+int decodeFile(
+    FILE *input,
+    FILE *output,
+    HuffmanNode *root,
+    unsigned long long originalSize
+) {
+    if (originalSize == 0) {
+        return 1;
+    }
+
+    if (root == NULL) {
+        return 0;
+    }
+
+    // Special case: only one unique character
+    if (root->left == NULL && root->right == NULL) {
+        for (unsigned long long i = 0; i < originalSize; i++) {
+            if (fputc(root->data, output) == EOF) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+    BitReader reader;
+    initBitReader(&reader, input);
+
+    unsigned long long decodedBytes = 0;
+    HuffmanNode *current = root;
+
+    while (decodedBytes < originalSize) {
+        int bit = readBit(&reader);
+
+        if (bit == -1) {
+            return 0;
+        }
+
+        if (bit == 0) {
+            current = current->left;
+        } else {
+            current = current->right;
+        }
+
+        if (current == NULL) {
+            return 0;
+        }
+
+        // A leaf represents one decoded character
+        if (current->left == NULL &&
+            current->right == NULL) {
+
+            if (fputc(current->data, output) == EOF) {
+                return 0;
+            }
+
+            decodedBytes++;
+            current = root;
+        }
+    }
+
+    return 1;
+}
 
 
 // Decompress a file using Huffman coding
-int decompressFile(const char *inputFilename) {
+int decompressFile(
+    const char *inputFilename,
+    const char *outputFilename
+) {
     FILE *input = fopen(inputFilename, "rb");
 
     if (input == NULL) {
@@ -23,9 +91,6 @@ int decompressFile(const char *inputFilename) {
         return 0;
     }
 
-    printf("Original file size: %llu bytes\n",
-           header.originalSize);
-
     HuffmanNode *root = buildHuffmanTree(header.frequency);
 
     if (root == NULL && header.originalSize > 0) {
@@ -34,20 +99,49 @@ int decompressFile(const char *inputFilename) {
         return 0;
     }
 
-    printf("Huffman tree rebuilt successfully.\n");
+    FILE *output = fopen(outputFilename, "wb");
+
+    if (output == NULL) {
+        perror("Could not create output file");
+        freeTree(root);
+        fclose(input);
+        return 0;
+    }
+
+    int success = decodeFile(
+        input,
+        output,
+        root,
+        header.originalSize
+    );
+
+    if (fclose(output) != 0) {
+        success = 0;
+    }
 
     freeTree(root);
     fclose(input);
+
+    if (!success) {
+        printf("Decompression failed.\n");
+        return 0;
+    }
+
+    printf("Decompression successful!\n");
+    printf("Created: %s\n", outputFilename);
 
     return 1;
 }
 
 
-int main(int argc, char *argv[]) {
 
-    if (argc >= 3 && strcmp(argv[1], "-d") == 0) {
-        return decompressFile(argv[2]) ? 0 : 1;
-    }
+int main(void) {
+    decompressFile("output.huf", "restored.txt");
+    return 0;
+}
+
+/*
+int main(int argc, char *argv[]) {
 
     const char *defaultInputFilename = "tests/test.txt";
     const char *fallbackInputFilename = "../tests/test.txt";
@@ -181,3 +275,5 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+*/
