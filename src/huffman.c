@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <sys/stat.h>
 
 #include "huffman.h"
 #include "heap.h"
@@ -45,6 +47,10 @@ int createFrequencyNodes(
 
             if (nodes[count] == NULL)
             {
+                for (int i = 0; i < count; i++)
+                {
+                    free(nodes[i]);
+                }
                 return -1;
             }
 
@@ -104,6 +110,12 @@ HuffmanNode *buildHuffmanTree(
 
         if (parent == NULL)
         {
+            freeTree(left);
+            freeTree(right);
+            while (heap.size > 0)
+            {
+                freeTree(extractMin(&heap));
+            }
             return NULL;
         }
 
@@ -244,99 +256,162 @@ void generateCodes(
         codes);
 }
 
-// Compress the input file using the generated Huffman codes
-int compressFile(
+// Encode the input file using the provided Huffman codes.
+int writeCompressedData(
     const char *inputFilename,
-    const char *outputFilename,
-    unsigned long long frequency[256],
+    FILE *output,
     char *codes[256])
 {
+    FILE *input = fopen(inputFilename, "rb");
+
+    if (input == NULL)
+    {
+        perror("Could not reopen input file");
+        return 0;
+    }
+
+    BitWriter writer;
+    initBitWriter(&writer, output);
+
+    unsigned char byte;
+    int success = 1;
+    while (fread(&byte, 1, 1, input) == 1)
+    {
+        if (codes[byte] == NULL || !writeBits(&writer, codes[byte]))
+        {
+            success = 0;
+            break;
+        }
+    }
+
+    if (ferror(input) || !flushBitWriter(&writer))
+    {
+        success = 0;
+    }
+
+    if (fclose(input) != 0)
+    {
+        success = 0;
+    }
+
+    return success;
+}
+
+// Compress the input file using the complete Huffman workflow.
+int compressFile(
+    const char *inputFilename,
+    const char *outputFilename)
+{
+    unsigned long long frequency[256] = {0};
+    unsigned long long originalSize = 0;
+    char *codes[256] = {0};
+    HuffmanNode *root = NULL;
+
+    struct stat inputStat;
+    struct stat outputStat;
+    if (stat(inputFilename, &inputStat) == 0 &&
+        stat(outputFilename, &outputStat) == 0 &&
+        inputStat.st_dev == outputStat.st_dev &&
+        inputStat.st_ino == outputStat.st_ino)
+    {
+        fprintf(stderr, "Input and output files must be different.\n");
+        return 0;
+    }
 
     FILE *input = fopen(inputFilename, "rb");
 
     if (input == NULL)
     {
-        printf("Could not open input file\n");
+        perror("Could not open input file");
         return 0;
     }
 
-    FILE *output = fopen(outputFilename, "wb");
-
-    if (output == NULL)
+    int byte;
+    while ((byte = fgetc(input)) != EOF)
     {
-        printf("Could not create output file\n");
-        fclose(input);
+        if (frequency[(unsigned char)byte] == ULLONG_MAX ||
+            originalSize == ULLONG_MAX)
+        {
+            fprintf(stderr, "Input file is too large to represent.\n");
+            fclose(input);
+            return 0;
+        }
+        frequency[(unsigned char)byte]++;
+        originalSize++;
+    }
+
+    int success = !ferror(input);
+    if (fclose(input) != 0)
+    {
+        success = 0;
+    }
+    if (!success)
+    {
+        perror("Could not read input file");
         return 0;
     }
 
-    // -----------------------------
-    // Calculate original file size
-    // -----------------------------
-
-    fseek(input, 0, SEEK_END);
-
-    unsigned long long originalSize =
-        ftell(input);
-
-    fseek(input, 0, SEEK_SET);
-
-    // -----------------------------
-    // Create header
-    // -----------------------------
-
-    HuffmanHeader header;
-
-    initializeHeader(
-        &header,
-        originalSize,
-        frequency);
-
-    // -----------------------------
-    // Write header
-    // -----------------------------
-
-    if (!writeHeader(
-            output,
-            &header))
+    if (originalSize > 0)
     {
+        root = buildHuffmanTree(frequency);
+        if (root == NULL)
+        {
+            fprintf(stderr, "Could not build Huffman tree.\n");
+            return 0;
+        }
 
-        printf("Could not write header\n");
-
-        fclose(input);
-        fclose(output);
-
-        return 0;
+        char code[256];
+        generateCodes(root, code, 0, codes);
+        for (int i = 0; i < 256; i++)
+        {
+            if (frequency[i] > 0 && codes[i] == NULL)
+            {
+                fprintf(stderr, "Could not generate Huffman codes.\n");
+                success = 0;
+                break;
+            }
+        }
     }
 
-    // -----------------------------
-    // Initialize bit writer
-    // -----------------------------
-
-    BitWriter writer;
-
-    initBitWriter(
-        &writer,
-        output);
-
-    // -----------------------------
-    // Encode input file
-    // -----------------------------
-
-    unsigned char byte;
-
-    while (fread(&byte, 1, 1, input) == 1)
+    if (success)
     {
-
-        writeBits(
-            &writer,
-            codes[byte]);
+        FILE *output = fopen(outputFilename, "wb");
+        if (output == NULL)
+        {
+            perror("Could not create output file");
+            success = 0;
+        }
+        else
+        {
+            HuffmanHeader header;
+            initializeHeader(&header, originalSize, frequency);
+            success = writeHeader(output, &header);
+            if (success)
+            {
+                success = writeCompressedData(
+                    inputFilename,
+                    output,
+                    codes);
+            }
+            if (fclose(output) != 0)
+            {
+                success = 0;
+            }
+            if (!success)
+            {
+                if (stat(outputFilename, &outputStat) == 0 &&
+                    S_ISREG(outputStat.st_mode))
+                {
+                    remove(outputFilename);
+                }
+            }
+        }
     }
 
-    // Write remaining bits
-    flushBitWriter(&writer);
-
-    fclose(input);
-    fclose(output);
-
-    return 1;
+    for (int i = 0; i < 256; i++)
+    {
+        free(codes[i]);
+    }
+    freeTree(root);
+    return success;
 }

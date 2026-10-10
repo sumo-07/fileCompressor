@@ -1,6 +1,8 @@
 #ifndef HUFFMAN_H
 #define HUFFMAN_H
 
+#include <stdio.h>
+
 typedef struct HuffmanNode
 {
 
@@ -38,11 +40,15 @@ void generateCodes(
 );
 
 
+int writeCompressedData(
+    const char *inputFilename,
+    FILE *output,
+    char *codes[256]
+);
+
 int compressFile(
     const char *inputFilename,
-    const char *outputFilename,
-    unsigned long long frequency[256],
-    char *codes[256]
+    const char *outputFilename
 );
 
 

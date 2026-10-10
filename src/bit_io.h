@@ -18,17 +18,17 @@ void initBitWriter(
     FILE *file
 );
 
-void writeBit(
+int writeBit(
     BitWriter *writer,
     int bit
 );
 
-void writeBits(
+int writeBits(
     BitWriter *writer,
     const char *bits
 );
 
-void flushBitWriter(
+int flushBitWriter(
     BitWriter *writer
 );
 

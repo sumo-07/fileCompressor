@@ -134,146 +134,29 @@ int decompressFile(
 }
 
 
-
-int main(void) {
-    decompressFile("output.huf", "restored.txt");
-    return 0;
-}
-
-/*
 int main(int argc, char *argv[]) {
+    if (argc != 4) {
+        printf("Usage:\n");
+        printf("  %s compress <input> <output.huf>\n", argv[0]);
+        printf("  %s decompress <input.huf> <output>\n", argv[0]);
+        return 1;
+    }
 
-    const char *defaultInputFilename = "tests/test.txt";
-    const char *fallbackInputFilename = "../tests/test.txt";
-    const char *inputFilename = argc > 1 ? argv[1] : defaultInputFilename;
-    const char *outputFilename = argc > 2 ? argv[2] : "output.huf";
-
-    // ==================================
-    // 1. Read input and count frequency
-    // ==================================
-
-    FILE *file = fopen(
-        inputFilename,
-        "rb"
-    );
-
-    if (file == NULL && argc <= 1) {
-        file = fopen(
-            fallbackInputFilename,
-            "rb"
-        );
-
-        if (file != NULL) {
-            inputFilename = fallbackInputFilename;
+    if (strcmp(argv[1], "compress") == 0) {
+        if (compressFile(argv[2], argv[3])) {
+            printf("Compression successful!\n");
+            printf("Created: %s\n", argv[3]);
+            return 0;
         }
-    }
-
-    if (file == NULL) {
-
-        printf(
-            "Could not open input file\n"
-        );
-
+        printf("Compression failed!\n");
         return 1;
     }
 
-    unsigned long long frequency[256] = {0};
-
-    unsigned char byte;
-
-    while (
-        fread(
-            &byte,
-            1,
-            1,
-            file
-        ) == 1
-    ) {
-
-        frequency[byte]++;
+    if (strcmp(argv[1], "decompress") == 0) {
+        return decompressFile(argv[2], argv[3]) ? 0 : 1;
     }
 
-    fclose(file);
-
-
-    // ==================================
-    // 2. Build Huffman tree
-    // ==================================
-
-    HuffmanNode *root =
-        buildHuffmanTree(frequency);
-
-    if (root == NULL) {
-
-        printf(
-            "Could not build Huffman tree\n"
-        );
-
-        return 1;
-    }
-
-
-    // ==================================
-    // 3. Generate Huffman codes
-    // ==================================
-
-    char *codes[256] = {NULL};
-
-    char code[256];
-
-    generateCodes(
-        root,
-        code,
-        0,
-        codes
-    );
-
-
-    // ==================================
-    // 4. Compress
-    // ==================================
-
-    if (
-        compressFile(
-            inputFilename,
-            outputFilename,
-            frequency,
-            codes
-        )
-    ) {
-
-        printf(
-            "\nCompression successful!\n"
-        );
-
-        printf(
-            "Created: %s\n",
-            outputFilename
-        );
-
-    } else {
-
-        printf(
-            "\nCompression failed!\n"
-        );
-    }
-
-
-    // ==================================
-    // 5. Cleanup
-    // ==================================
-
-    for (int i = 0; i < 256; i++) {
-
-        free(codes[i]);
-    }
-
-    freeTree(root);
-
-
-
-
-    return 0;
+    printf("Unknown command: %s\n", argv[1]);
+    printf("Use 'compress' or 'decompress'.\n");
+    return 1;
 }
-
-*/

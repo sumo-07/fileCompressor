@@ -14,7 +14,7 @@ void initBitWriter(
 }
 
 // Write one bit to the BitWriter, emitting each completed byte.
-void writeBit(
+int writeBit(
     BitWriter *writer,
     int bit
 ) {
@@ -23,29 +23,37 @@ void writeBit(
     writer->bitCount++;
 
     if (writer->bitCount == 8) {
-        fputc(writer->buffer, writer->file);
+        if (fputc(writer->buffer, writer->file) == EOF) {
+            return 0;
+        }
         writer->buffer = 0;
         writer->bitCount = 0;
     }
+
+    return 1;
 }
 
 // write a single bit to the BitWriter
-void writeBits(
+int writeBits(
     BitWriter *writer,
     const char *bits
 ) {
 
     for (int i = 0; bits[i] != '\0'; i++) {
 
-        writeBit(
+        if (!writeBit(
             writer,
             bits[i] == '1'
-        );
+        )) {
+            return 0;
+        }
     }
+
+    return 1;
 }
 
 // flush the BitWriter
-void flushBitWriter(
+int flushBitWriter(
     BitWriter *writer
 ) {
 
@@ -55,15 +63,19 @@ void flushBitWriter(
             writer->buffer
             << (8 - writer->bitCount);
 
-        fputc(
+        if (fputc(
             writer->buffer,
             writer->file
-        );
+        ) == EOF) {
+            return 0;
+        }
 
         writer->buffer = 0;
 
         writer->bitCount = 0;
     }
+
+    return 1;
 }
 
 // BitReader functions
