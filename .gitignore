@@ -81,5 +81,8 @@ Thumbs.db
 # Logs
 *.log
 
+
+tests/
+
 #restored files
 restored.txt
