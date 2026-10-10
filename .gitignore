@@ -89,3 +89,6 @@ tests/
 
 #restored files
 restored.txt
+
+# Ignore compiled executable
+compressor
