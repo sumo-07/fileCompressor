@@ -81,8 +81,11 @@ Thumbs.db
 # Logs
 *.log
 
-
+# Ignore tests directory
 tests/
+
+# Ignore all Huffman compressed files
+*.huf
 
 #restored files
 restored.txt
