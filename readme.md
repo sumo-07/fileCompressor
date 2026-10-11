@@ -34,12 +34,13 @@ Decompress a `.huf` file:
 ./compressor decompress <input.huf> <restored-file>
 ```
 
-For example, to compress and restore the included text fixture:
+For example, create a small input file, then compress and restore it:
 
 ```sh
-./compressor compress tests/test.txt /tmp/test.huf
+printf 'Example text to compress.\n' > /tmp/input.txt
+./compressor compress /tmp/input.txt /tmp/test.huf
 ./compressor decompress /tmp/test.huf /tmp/restored.txt
-cmp tests/test.txt /tmp/restored.txt
+cmp /tmp/input.txt /tmp/restored.txt
 ```
 
 The program returns a nonzero exit status if the requested operation fails.
@@ -61,10 +62,10 @@ incomplete headers, and truncated bitstreams are rejected, but arbitrary
 payload corruption is not guaranteed to be detected if it still decodes to the
 recorded original size.
 
-## Tests
+## Testing
 
-The `tests/` directory includes a text fixture and an empty-file fixture. Basic
-round-trip checks can be run with the build and usage commands above. For binary
-or single-byte input, provide the desired file as the input and compare the
-restored output byte-for-byte with `cmp`.
+No test fixtures are bundled. To check a round trip, use your own input file
+with the commands above and compare the original and restored files with
+`cmp`. You can also try an empty file (`: > /tmp/empty.txt`), binary data, or a
+file containing only one distinct byte value.
 ended
