@@ -4,16 +4,21 @@ A small command-line file compressor and decompressor written in C. It uses
 Huffman coding and supports text files, arbitrary binary data, empty files, and
 files containing only one distinct byte value.
 
+## Prerequisites
+
+You need a C11-compatible compiler (such as GCC or Clang) and GNU Make.
+
 ## Build
 
-From the project root, compile the source files with a C compiler:
+From the project root, build the program with:
 
 ```sh
-gcc -std=c11 -Wall -Wextra -Wpedantic src/main.c src/huffman.c \
-	src/file_format.c src/bit_io.c src/heap.c -o compressor
+make
 ```
 
-To treat compiler warnings as errors, add `-Werror` to the command.
+This creates the `compressor` executable. To use a different compiler, run
+`make CC=clang`. To remove the executable and intermediate build files, run
+`make clean`.
 
 ## Usage
 
